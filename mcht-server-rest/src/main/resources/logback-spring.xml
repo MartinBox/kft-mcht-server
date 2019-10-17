@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--/opt/appl/spring-cloud/online-brh-trade/config-->
+<!-- For assistance related to logback-translator or configuration -->
+<!-- files in general, please contact the logback user mailing list -->
+<!-- at http://www.qos.ch/mailman/listinfo/logback-user -->
+<!-- -->
+<!-- For professional support please see -->
+<!-- http://www.qos.ch/shop/products/professionalSupport -->
+<!-- -->
+<configuration scan="true" scanPeriod="10 seconds">
+    <springProperty name="contextName" source="spring.application.name"/>
+    <property name="log.base" value="${LOG_PATH}/${contextName}"/>
+
+    <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <pattern>%date{yyyy-MM-dd HH:mm:ss:SSS} [%t] %-5level %logger{40} %X{transactionId} - %msg%n
+            </pattern>
+        </layout>
+    </appender>
+    <logger name="com.mcoder.kft.mapper" level="DEBUG"/>
+    <!--
+    level:用来设置打印级别，大小写无关：TRACE, DEBUG, INFO, WARN, ERROR, ALL 和 OFF，不能设置为INHERITED或者同义词NULL。默认是DEBUG。
+    root接到下级传递的信息，交给已经配置好的名为“STDOUT”的appender处理
+    -->
+
+    <root level="INFO">
+        <appender-ref ref="stdout"/>
+    </root>
+
+</configuration>

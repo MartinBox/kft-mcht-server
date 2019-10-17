@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.mcoder.kft.mapper.CustInfoMapper">
+
+    <select id="selectById" resultType="com.mcoder.kft.entity.CustInfo">
+      select * from tbl_cust_info where id=#{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into tbl_cust_info(custBankNo,custBankAccountIssuerNo,custBankAccountNo,custName,
+        custBankAcctType,custAccountCreditOrDebit,custCardCvv2,custCardValidDate,custID,custPhone,
+        custCertificationType,custEmail,insertTime,treatyStatus,merchantTreatyNo,paymentItem,startDate,
+        endDate)
+        values (#{custBankNo},#{custBankAccountIssuerNo},#{custBankAccountNo},#{custName},
+        #{custBankAcctType}, #{custAccountCreditOrDebit},#{custCardCvv2},#{custCardValidDate},#{custID},#{custPhone},
+        #{custCertificationType},#{custEmail}, #{insertTime},#{treatyStatus},#{merchantTreatyNo},#{paymentItem},#{startDate},
+        #{endDate})
+
+    </insert>
+
+    <select id="selectByPage" resultType="com.mcoder.kft.entity.CustInfo">
+        SELECT
+        *
+        FROM tbl_cust_info
+        where 1=1
+        <if test="custBankAccountNo != null and custBankAccountNo!='' ">
+            and custBankAccountNo=#{custBankAccountNo}
+        </if>
+        <if test="custName != null and custName!='' ">
+            and custName=#{custName}
+        </if>
+        <if test="custID != null and custID!='' ">
+            and custID=#{custID}
+        </if>
+        <if test="custPhone != null and custPhone!='' ">
+            and custPhone=#{custPhone}
+        </if>
+    </select>
+
+    <update id="update">
+        update tbl_cust_info
+        set custBankNo=#{custBankNo},
+            custBankAccountIssuerNo=#{custBankAccountIssuerNo},
+            custBankAccountNo=#{custBankAccountNo},
+            custName=#{custName},
+            custBankAcctType=#{custBankAcctType},
+            custAccountCreditOrDebit=#{custAccountCreditOrDebit},
+            custCardCvv2=#{custCardCvv2},
+            custCardValidDate=#{custCardValidDate},
+            custID=#{custID},
+            custPhone=#{custPhone},
+            custCertificationType=#{custCertificationType},
+            custEmail=#{custEmail},
+            updateTime=#{updateTime},
+            paymentItem=#{paymentItem},
+            startDate=#{startDate},
+            endDate=#{endDate}
+        where id=#{id}
+    </update>
+    <update id="updateTreatyInfo">
+        update tbl_cust_info
+        set treatyStatus=#{treatyStatus},
+            treatyNo=#{treatyNo},
+            treatyResultDesc=#{treatyResultDesc},
+            treatyOrderNo=#{treatyOrderNo}
+        where id=#{id}
+    </update>
+</mapper>

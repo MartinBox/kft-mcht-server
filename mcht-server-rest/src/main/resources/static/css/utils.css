@@ -1,0 +1,45 @@
+.icon-cups-report{
+	background:url('/static/img/cups-report.png') no-repeat center center;
+}
+.icon-statis-report{
+	background:url('/static/img/statis-report.png') no-repeat center center;
+}	
+.icon-configure{
+	background:url('/static/img/configure.png') no-repeat center center;
+}
+.icon-trans{
+	background:url('/static/img/trans.png') no-repeat center center;
+}
+.icon-settle{
+	background:url('/static/img/settle.png') no-repeat center center;
+}
+.icon-file{
+	background:url('/static/img/file.png') no-repeat center center;
+}
+.icon-upload{
+	background:url('/static/img/upload.png') no-repeat center center;
+}
+.icon-download{
+	background:url('/static/img/download.png') no-repeat center center;
+}
+.icon-other{
+	background:url('/static/img/other.png') no-repeat center center;
+}
+.icon-test{
+	background:url('/static/img/test.png') no-repeat center center;
+}
+.icon-export{
+	background:url('/static/img/export.png') no-repeat center center;
+}
+.icon-gift{
+	background:url('/static/img/gift.png') no-repeat center center;
+}
+.icon-single{
+	background:url('/static/img/single.png') no-repeat center center;
+}
+.icon-batch{
+	background:url('/static/img/batch.png') no-repeat center center;
+}
+.icon-init{
+	background:url('/static/img/init.png') no-repeat center center;
+}

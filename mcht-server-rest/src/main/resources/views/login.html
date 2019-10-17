@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_xsrf" content="{{.Xsrf_token}}"/>
+
+    <title th:text="${title}"></title>
+    <link rel="shortcut icon" href="/static/img/favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="/static/css/utils.css"/>
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/gray/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/icon.css"/>
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/demo/demo.css"/>
+    <script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/md5.min.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/jquery.easyui.min.js"></script>
+
+    <style>
+        footer {
+            position: fixed;
+            bottom: 10px;
+            color: #999;
+        }
+    </style>
+
+    <script>
+        "use strict";
+        var g_seconds = 10;
+        var g_count = 0;
+        var g_interval;
+
+        $(document).ready(function () {
+            $('#login').window('open');
+
+            $('#errDesc').text("");
+            $('#userName').textbox('textbox').focus();
+        })
+
+        $(document).keydown(function (e) {
+            if (e.keyCode == 13) {
+                login();
+            }
+        })
+
+        function identify() {
+            if (!$('#userName').validatebox('isValid')) {
+                $('#userName').textbox('textbox').focus();
+                $('#errDesc').text("用户名无效");
+                return;
+            }
+
+            if (!$('#passWord').validatebox('isValid')) {
+                $('#passWord').textbox('textbox').focus();
+                $('#errDesc').text("密码无效");
+                return;
+            }
+
+            var promise = new Promise(function (resolve, reject) {
+                $.ajax({
+                    url: "/identify_send",
+                    contentType: "application/json",
+                    type: "POST",
+                    data: JSON.stringify({
+                        userName: $('#userName').val(),
+                        password: md5($("#passWord").val())
+                    }),
+                    dataType: "json",
+                    error: function (data) {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: data.responseText,
+                            icon: "error"
+                        });
+                    },
+                    success: function (rsp, status, xhr) {
+                        if (rsp.retCode === "0000") {
+                            resolve();
+                        } else {
+                            reject(rsp.retDesc);
+                        }
+                    }
+                });
+            });
+
+            promise.then(function (value) {
+                g_count = g_seconds;
+                $("#identifyButton").linkbutton("disable");
+
+                g_interval = window.setInterval(timeEvent, 1000);
+            }, function (value) {
+                $.messager.alert({
+                    title: "Tips",
+                    msg: value,
+                    icon: "error"
+                });
+            });
+        }
+
+        function timeEvent() {
+            if (g_count > 1) {
+                g_count--;
+
+                $('#identifyButton').linkbutton({
+                    text: g_count + "秒后再次获取"
+                });
+            } else {
+                window.clearInterval(g_interval);
+                $("#identifyButton").linkbutton("enable");
+                $('#identifyButton').linkbutton({
+                    text: "获取验证码"
+                });
+            }
+        }
+
+        function login() {
+            if (!$('#userName').validatebox('isValid')) {
+                $('#userName').textbox('textbox').focus();
+                $('#errDesc').text("用户名无效");
+                return false;
+            }
+
+            if (!$('#passWord').validatebox('isValid')) {
+                $('#passWord').textbox('textbox').focus();
+                $('#errDesc').text("密码无效");
+                return false;
+            }
+
+            if (!$('#identifyCode').validatebox('isValid')) {
+                $('#identifyCode').textbox('textbox').focus();
+                $('#errDesc').text("验证码无效");
+                return false;
+            }
+
+            $.ajax({
+                url: "/user_login",
+                contentType: "application/json",
+                type: "POST",
+                data: JSON.stringify({
+                    userName: $('#userName').val(),
+                    password: md5($("#passWord").val()),
+                    identifyCode: $("#identifyCode").val()
+                }),
+                dataType: "json",
+                beforeSend: function () {
+                    $('#loginButton').linkbutton("disable");
+                },
+                complete: function (xhr, textStatus) {
+                    $('#loginButton').linkbutton("enable");
+
+                    console.log(xhr.status);
+                },
+                error: function (data) {
+                    $.messager.alert({
+                        title: "Tips",
+                        msg: data.responseText,
+                        icon: "error"
+                    });
+                },
+                success: function (rsp, status, xhr) {
+                    if (rsp.retCode === "0000") {
+                        window.location.href = "/home";
+                    } else {
+                        $('#errDesc').text(rsp.retDesc);
+                    }
+                }
+            });
+        }
+
+        function reset() {
+            $('#userName').textbox("setValue", "");
+            $('#passWord').textbox("setValue", "");
+            $('#identifyCode').textbox("setValue", "");
+            $('#userName').textbox('textbox').focus();
+        }
+    </script>
+</head>
+<body>
+<div style="width:400px;height:300px;margin:0 auto;">
+    <div style="text-align:center">
+        <h2><span th:text="${title}"></span></h2>
+    </div>
+
+    <div id="login" class="easyui-window" title="请先登录"
+         data-options="modal:true,closed:false,closable:false,minimizable:false,collapsible:false,maximizable:false,draggable:false,resizable:false"
+         style="padding:20px 70px 20px 70px;">
+        <div>用户名:</div>
+        <div style="margin-bottom:10px">
+            <input class="easyui-validatebox easyui-textbox" id="userName"
+                   data-options="required:true,validType:'length[1,20]',iconCls:'icon-man',iconWidth:38"
+                   missingMessage="用户名必填"
+                   style="width:100%;height:30px;padding:12px"/>
+        </div>
+        <div>密码:</div>
+        <div style="margin-bottom:20px">
+            <input class="easyui-validatebox easyui-textbox" id="passWord" type="password"
+                   data-options="required:true,validType:'length[1,20]',iconCls:'icon-lock',iconWidth:38"
+                   missingMessage="密码必填"
+                   style="width:100%;height:32px" style="width:100%;height:30px;padding:12px"/>
+        </div>
+        <div style="margin-top:20px">
+            <input id="identifyCode" class="easyui-validatebox easyui-textbox" type="text"
+                   data-options="required:true,validType:'length[1,20]'" style="width:50%;height:32px"
+                   missingMessage="校验码必填"
+                   name="identifyCode" maxlength="20"/>
+
+            <a id="identifyButton" href="javascript:void(0)" class="easyui-linkbutton"
+               style="width:45%;height:32px;float:right" onclick="identify();">获取验证码</a>
+        </div>
+
+        <div style="height:20px;margin-top:10px;text-align:center">
+            <lable id="errDesc" style="color:red;"></lable>
+        </div>
+        <div style="margin-top:10px">
+            <a id="loginButton" href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-ok"
+               style="width:45%;height:32px;float:left" onclick="login();">登陆</a>
+            <a id="resetButton" href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-reload"
+               style="width:45%;height:32px;float:right" onclick="reset();">重置</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

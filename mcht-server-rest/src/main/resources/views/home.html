@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_xsrf" content="{{.Xsrf_token}}"/>
+
+    <title th:text="${title}"></title>
+    <link rel="shortcut icon" href="/static/img/favicon.ico">
+    <link rel="stylesheet" type="text/css" href="/static/css/utils.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/demo/demo.css">
+    <script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/src/jquery.tabs.js"></script>
+    <script>
+        "use strict";
+
+        function addOtherTab(obj, url) {
+            addTab($.trim($(obj).text()), url)
+        }
+
+        function addHelpTab(obj) {
+            addTab($.trim($(obj).text()), "/settle/help/" + $.trim($(obj).text()));
+        }
+
+        function addOtherTabClose(obj, url) {
+            $.messager.alert({
+                title: "Tips",
+                msg: "此功能暂未开放",
+                icon: "info"
+            });
+        }
+
+        function addTab(title, url) {
+            if ($('#tt').tabs("exists", title)) {
+                $('#tt').tabs("select", title);
+            } else {
+                var content = '<iframe scrolling="auto" frameborder="0" src="' + url + '" style="width:100%;height:100%;"></iframe>';
+                $('#tt').tabs("add", {
+                    title: title,
+                    content: content,
+                    border: true,
+                    closable: true
+                });
+            }
+            tabRefresh();
+            $('#tt').tabs("select", title);
+        }
+
+        function tabRefresh() {
+            var tabs = $('#tt').tabs().tabs("tabs");
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].panel("options").tab.unbind().bind("mouseenter", {
+                    index: i
+                }, function (e) {
+                    $('#tt').tabs("select", e.data.index);
+                });
+            }
+        }
+
+        function logout() {
+            $.ajax({
+                url: "/logout",
+                type: "GET",
+                dataType: "json",
+                success: function (rsp, status, xhr) {
+                    window.location.href = "/login";
+                }
+            })
+        }
+
+        function queryAvailableBalance() {
+            $.ajax({
+                url: "/query_available_balance",
+                type: "GET",
+                dataType: "json",
+                beforeSend: function () {
+                    $('#balanceQuery').linkbutton("disable");
+                },
+                complete: function () {
+                    $('#balanceQuery').linkbutton("enable");
+                },
+                error: function (data) {
+                    $.messager.alert({
+                        title: "Tips",
+                        msg: data.responseText,
+                        icon: "error"
+                    });
+                },
+                success: function (rsp, status, xhr) {
+                    if (rsp.retCode === "0000") {
+                        $('#balance').html("余额: " + str2Money(rsp.availableBalance, 2));
+                    } else {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: rsp.retDesc,
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            queryAvailableBalance();
+        });
+    </script>
+</head>
+<body class="easyui-layout">
+<div id="mm1" style="width:30px;display:none">
+    <div>
+        <span>页面风格</span>
+        <div>
+            <div onclick="cssReload('/plugins/easyui/themes/gray/easyui.css');">gray</div>
+            <div onclick="cssReload('/plugins/easyui/themes/metro/easyui.css');">metro</div>
+            <div onclick="cssReload('/plugins/easyui/themes/black/easyui.css');">black</div>
+            <div onclick="cssReload('/plugins/easyui/themes/default/easyui.css');">default</div>
+            <div onclick="cssReload('/plugins/easyui/themes/material/easyui.css');">material</div>
+            <div onclick="cssReload('/plugins/easyui/themes/bootstrap/easyui.css');">bootstrap</div>
+        </div>
+    </div>
+    <div>
+        <span>分页标签</span>
+        <div>
+            <div onclick="$('#tt').tabs({tabPosition:'top'})">顶部</div>
+            <div onclick="$('#tt').tabs({tabPosition:'bottom'})">底部</div>
+            <div onclick="$('#tt').tabs({tabPosition:'left'})">左边</div>
+            <div onclick="$('#tt').tabs({tabPosition:'right'})">右边</div>
+        </div>
+    </div>
+    <div onclick="logout();">安全退出</div>
+</div>
+<div data-options="region:'north',border:false" style="height:50px;background:#B3DFDA;">
+    <div style="float:left;width:100px;height:50px">
+        <img src="http://www.kuaifupay.com.cn/pic/logo.png" style="width:100px;height:50px;" alt="快付通"/>
+    </div>
+    <div style="float:right;width:90%">
+        <div style="height:40px;top:0">
+            <div style="float:left;text-align:right;width:45%;height:40px">
+                <h2 style="color:green;"><span th:text="${title}"></span></h2>
+            </div>
+
+            <div style="float:right;margin-right:1%;text-align:right;width:53%;height:40px">
+                <span style="margin-left:5px;width:150px"><font id="balance" size="2" color="red"></font></span>
+                <a id="balanceQuery" href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-reload"
+                   plain="true" onclick="queryAvailableBalance()"><font size="4"></font></a>
+
+                <span style="margin-left:80px;"></span>
+
+                <a href="javascript:void(0)" class="easyui-menubutton" data-options="menu:'#mm1'"><strong
+                        style="font-size:100%"><u><span th:text="${userName}"></span></u></strong></a>
+            </div>
+        </div>
+    </div>
+</div>
+<div data-options="region:'west',collapsible:false,split:true,title:'功能选择'" style="width:200px;">
+    <div id="ai" class="easyui-accordion" data-options="multiple:true" style="margin-bottom:30px">
+        <div title="通用功能" data-options="iconCls:'icon-configure',collapsed:false,selected:false"
+             style="padding:10px;margin-left:10px;">
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-settle" style="width:150px"
+               onclick="addOtherTab(this,'trade_record_query.html')">代付信息查询</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-configure" style="width:150px"
+               onclick="addOtherTab(this,'cust_manage.html')">客户信息管理</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-download" style="width:150px"
+               onclick="addOtherTab(this,'capital_account_balance_change_query.html')">资金变动下载</a>
+            <a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-download" style="width:150px"
+               onclick="addOtherTab(this,'recon_result_query_sftp.html')">对账文件下载</a>
+            <!--<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-settle" style="width:150px"-->
+            <!--onclick="addOtherTab(this,'auto_register.html')">虚户自动补登</a>-->
+        </div>
+        <!--<div title="帮助" data-options="iconCls:'icon-help'" style="padding:10px;margin-left:10px;">-->
+        <!--<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-help" style="width:150px"-->
+        <!--onclick="addHelpTab(this)">beego</a>-->
+        <!--<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-help" style="width:150px"-->
+        <!--onclick="addHelpTab(this)">easyui</a>-->
+        <!--<a href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-help" style="width:150px"-->
+        <!--onclick="addHelpTab(this)">help</a>-->
+        <!--</div>-->
+    </div>
+</div>
+
+<div id="tt" class="easyui-tabs" style="width:400px;height:250px;"
+     data-options="region:'center',title:'页面展示',iconCls:'icon-ok',pill:true">
+    <div title="Home" style="padding:10px">
+        <h1>通知</h1>
+        <ul class="easyui-datalist" data-options="lines:true">
+            {{range $key, $val := .Notice}}
+            <li>通知</li>
+            {{end}}
+        </ul>
+        <h1 style="color:red">说明</h1>
+        <ul class="easyui-datalist" data-options="lines:true,textFormatter: function(value,row,index){return value}">
+            <li>
+                <lable style="color:red;font-size:16px">说明1</lable>
+            </li>
+            <li>
+                <lable style="color:red;font-size:16px">说明2</lable>
+            </li>
+            <li>
+                <lable style="color:red;font-size:16px">说明3</lable>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

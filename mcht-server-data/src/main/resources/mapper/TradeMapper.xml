@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mcoder.kft.mapper.TradeMapper">
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        insert into tbl_trade(merchantId,orderNo,tradeName,merchantBankAccountNo,merchantBindPhoneNo,
+        tradeTime,amount,status,custBankNo,custBankAccountIssuerNo,custBankAccountNo,custName,
+        custBankAcctType,custAccountCreditOrDebit,custCardCvv2,custCertificationType,custCardValidDate,
+        custID,custPhone,messages,custEmail,emailMessages,custProtocolNo,remark,
+        status,insertTime)
+        values (#{merchantId},#{orderNo},#{tradeName},#{merchantBankAccountNo},#{merchantBindPhoneNo},
+        #{tradeTime},#{amount},#{status},#{custBankNo},#{custBankAccountIssuerNo},#{custBankAccountNo},#{custName},
+        #{custBankAcctType},#{custAccountCreditOrDebit},#{custCardCvv2},#{custCertificationType},#{custCardValidDate},
+        #{custID},#{custPhone},#{messages},#{custEmail},#{emailMessages},#{custProtocolNo},#{remark},
+        #{status},#{insertTime})
+
+    </insert>
+
+    <update id="update">
+       update tbl_trade
+       set status=#{status},
+           errorCode=#{errorCode},
+           errorDesc=#{errorDesc},
+           bankReturnTime=#{bankReturnTime},
+           updateTime=#{updateTime}
+       where orderNo=#{orderNo}
+    </update>
+
+    <select id="selectByOrderNo" resultType="com.mcoder.kft.entity.Trade">
+        select *
+        from tbl_trade
+        where orderNo=#{orderNo}
+    </select>
+
+    <select id="selectByPage" resultType="com.mcoder.kft.entity.Trade">
+        SELECT
+        *
+        FROM tbl_trade
+        where 1=1
+        <if test="status != null and status!=''">
+            and status=#{status}
+        </if>
+        <if test="merchantBankAccountNo != null and merchantBankAccountNo!=''">
+            and merchantBankAccountNo=#{merchantBankAccountNo}
+        </if>
+        <if test="custName != null and custName!=''">
+            and custName=#{custName}
+        </if>
+        <if test="amount != null and amount!='' and amount!='NaN'">
+            and amount=#{amount}
+        </if>
+        <if test="orderNo != null and orderNo!=''">
+            and orderNo=#{orderNo}
+        </if>
+        <if test="startDate != null and startDate!=''">
+            and tradeTime &gt;= #{startDate}
+        </if>
+        <if test="endDate != null and endDate!=''">
+            and tradeTime &lt;= #{endDate}
+        </if>
+        order by insertTime desc
+    </select>
+
+</mapper>

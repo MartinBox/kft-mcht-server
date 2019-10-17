@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_xsrf" content="{{.Xsrf_token}}"/>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/utils.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/gray/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/demo/demo.css">
+    <script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/src/jquery.tabs.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/extend/datagrid-detailview.js"></script>
+    <script type="text/javascript" src="/static/js/easyui.datagrid.js"></script>
+
+    <script>
+        "use strict";
+
+        function myformatter(date) {
+            var y = date.getFullYear();
+            var m = date.getMonth() + 1;
+            var d = date.getDate();
+            return y + (m < 10 ? ('0' + m) : m) + (d < 10 ? ('0' + d) : d);
+        }
+
+        function myparser(s) {
+            if (!s) return new Date();
+            var y = parseInt(s.substring(0, 4), 10);
+            var m = parseInt(s.substring(4, 6), 10);
+            var d = parseInt(s.substring(6, 8), 10);
+            if (!isNaN(y) && !isNaN(m) && !isNaN(d)) {
+                return new Date(y, m - 1, d);
+            } else {
+                return new Date();
+            }
+        }
+
+        function custBatchQuery() {
+            $('#custQuery').linkbutton("disable");
+
+            $('#dg').datagrid("options").url = "/cust_info";
+
+            $('#dg').datagrid("load", {
+                custName: $('#tb').find('#custName').val(),
+                custBankAccountNo: $('#tb').find('#custBankAccountNo').val(),
+                custId: $('#tb').find('#custId').val(),
+                custPhone: $('#tb').find('#custPhone').val()
+            });
+
+            $('#custQuery').linkbutton("enable");
+        }
+
+        function custAdd() {
+            $('#dlg-cust').dialog('open');
+
+            $('#dlg-cust').panel({title: "客户信息新增"});
+            $('#confirmButton').linkbutton({
+                text: "新增",
+                iconCls: "icon-add",
+                onClick: addConfirm
+            });
+        }
+
+
+        /**
+         * 协议操作
+         */
+        function sendTreaty(service) {
+            var row = $('#dg').datagrid('getSelected');
+            $.ajax({
+                url: "/" + service + "/" + row.id,
+                type: "GET",
+                dataType: "json",
+                contentType: "application/json",
+                beforeSend: function () {
+                    $('#confirmButton').linkbutton("disable");
+                },
+                complete: function () {
+                    $('#confirmButton').linkbutton("enable");
+                },
+                error: function (data) {
+                    $.messager.alert({
+                        title: "Tips",
+                        msg: data.responseText,
+                        icon: "error"
+                    });
+                },
+                success: function (rsp, status, xhr) {
+                    if (rsp.retCode === "0000" && rsp.treatyStatus === "1") {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: rsp.retDesc,
+                            icon: "info"
+                        });
+
+                        custBatchQuery();
+                    } else {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: rsp.retDesc,
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+        }
+
+        function custClose() {
+            $('#dlg-cust').dialog('close');
+        }
+
+        function addConfirm() {
+            $.messager.confirm("Tips", "确定新增?", function (r) {
+                if (r) {
+                    $.ajax({
+                        url: "/cust_info",
+                        type: "POST",
+                        data: JSON.stringify({
+                            custName: $('#dlg-cust').find('#custName').val(),
+                            custBankAcctType: $('#dlg-cust').find('#custBankAcctType').val(),
+                            custBankAccountNo: $('#dlg-cust').find('#custBankAccountNo').val(),
+                            custBankNo: $('#dlg-cust').find('#custBankNo').val(),
+                            custBankAccountIssuerNo: $('#dlg-cust').find('#custBankAccountIssuerNo').val(),
+                            custAccountCreditOrDebit: $('#dlg-cust').find('#custAccountCreditOrDebit').val(),
+                            custCardValidDate: $('#dlg-cust').find('#custCardValidDate').val(),
+                            custCardCvv2: $('#dlg-cust').find('#custCardCvv2').val(),
+                            custCertificationType: $('#dlg-cust').find('#custCertificationType').val(),
+                            custID: $('#dlg-cust').find('#custID').val(),
+                            custPhone: $('#dlg-cust').find('#custPhone').val(),
+                            custEmail: $('#dlg-cust').find('#custEmail').val(),
+                            paymentItem: $('#dlg-cust').find('#paymentItem').val(),
+                            startDate: $('#dlg-cust').find('#startDate').datebox("getValue"),
+                            endDate: $('#dlg-cust').find('#endDate').datebox("getValue")
+                        }),
+                        dataType: "json",
+                        contentType: "application/json",
+                        beforeSend: function () {
+                            $('#confirmButton').linkbutton("disable");
+                        },
+                        complete: function () {
+                            $('#confirmButton').linkbutton("enable");
+                        },
+                        error: function (data) {
+                            $.messager.alert({
+                                title: "Tips",
+                                msg: data.responseText,
+                                icon: "error"
+                            });
+                        },
+                        success: function (rsp, status, xhr) {
+                            if (rsp.retCode === "0000") {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: "新增成功",
+                                    icon: "info"
+                                });
+
+                                custClose();
+                            } else {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "error"
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function onContextMenu(e, index) {
+            var row = $('#dg').datagrid('getSelected');
+
+            if (row === null || row.id.length === 0) {
+                console.log("select is null", row);
+                return;
+            }
+
+            e.preventDefault();
+            $('#dg').datagrid('unselectAll');
+            $('#dg').datagrid('selectRow', index);
+            $('#right-menu').menu('show', {
+                left: e.pageX,
+                top: e.pageY
+            });
+        }
+
+        function custDelete() {
+            var row = $('#dg').datagrid('getSelected');
+
+            $.ajax({
+                url: "/cust_info",
+                type: "DELETE",
+                data: JSON.stringify({
+                    id: row.id
+                }),
+                dataType: "json",
+                error: function (data) {
+                    $.messager.alert({
+                        title: "Tips",
+                        msg: data.responseText,
+                        icon: "error"
+                    });
+                },
+                success: function (rsp, status, xhr) {
+                    if (rsp.retCode === "0000") {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: "删除成功",
+                            icon: "info"
+                        });
+                    } else {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: rsp.retDesc,
+                            icon: "error"
+                        });
+                    }
+                }
+            });
+        }
+
+        function custModify() {
+            var row = $('#dg').datagrid('getSelected');
+
+            $('#dlg-cust').dialog('open');
+
+            $('#dlg-cust').panel({title: "客户信息修改"});
+            $('#confirmButton').linkbutton({
+                text: "修改",
+                iconCls: "icon-edit",
+                onClick: modifyConfirm
+            });
+
+            $('#dlg-cust').find('#custName').val(row.custName);
+            $('#dlg-cust').find('#custBankAccountNo').val(row.custBankAccountNo);
+            $('#dlg-cust').find('#custBankNo').combobox('setValue', row.custBankNo);
+            $('#dlg-cust').find('#custBankAccountIssuerNo').val(row.custBankAccountIssuerNo);
+            $('#dlg-cust').find('#custBankAcctType').combobox('setValue', row.custBankAcctType);
+            $('#dlg-cust').find('#custAccountCreditOrDebit').combobox('setValue', row.custAccountCreditOrDebit);
+            $('#dlg-cust').find('#custCardValidDate').val(row.custCardValidDate);
+            $('#dlg-cust').find('#custCardCvv2').val(row.custCardCvv2);
+            $('#dlg-cust').find('#custCertificationType').combobox('setValue', row.custCertificationType);
+            $('#dlg-cust').find('#custID').val(row.custID);
+            $('#dlg-cust').find('#custPhone').val(row.custPhone);
+            $('#dlg-cust').find('#custEmail').val(row.custEmail);
+            $('#dlg-cust').find('#paymentItem').combobox('setValue', row.paymentItem);
+            $('#dlg-cust').find('#startDate').datebox('setValue', row.startDate);
+            $('#dlg-cust').find('#endDate').datebox('setValue', row.endDate);
+
+        }
+
+        function modifyConfirm() {
+            var row = $('#dg').datagrid('getSelected');
+
+            $.messager.confirm("Tips", "确定修改?", function (r) {
+                if (r) {
+                    $.ajax({
+                        url: "/cust_info",
+                        type: "PUT",
+                        data: JSON.stringify({
+                            id: row.id,
+                            custName: $('#dlg-cust').find('#custName').val(),
+                            custBankAcctType: $('#dlg-cust').find('#custBankAcctType').val(),
+                            custBankAccountNo: $('#dlg-cust').find('#custBankAccountNo').val(),
+                            custBankNo: $('#dlg-cust').find('#custBankNo').val(),
+                            custBankAccountIssuerNo: $('#dlg-cust').find('#custBankAccountIssuerNo').val(),
+                            custAccountCreditOrDebit: $('#dlg-cust').find('#custAccountCreditOrDebit').val(),
+                            custCardValidDate: $('#dlg-cust').find('#custCardValidDate').val(),
+                            custCardCvv2: $('#dlg-cust').find('#custCardCvv2').val(),
+                            custCertificationType: $('#dlg-cust').find('#custCertificationType').val(),
+                            custID: $('#dlg-cust').find('#custID').val(),
+                            custPhone: $('#dlg-cust').find('#custPhone').val(),
+                            custEmail: $('#dlg-cust').find('#custEmail').val(),
+                            paymentItem: $('#dlg-cust').find('#paymentItem').val(),
+                            startDate: $('#dlg-cust').find('#startDate').datebox("getValue"),
+                            endDate: $('#dlg-cust').find('#endDate').datebox("getValue")
+                        }),
+                        dataType: "json",
+                        contentType: "application/json",
+                        beforeSend: function () {
+                            $('#confirmButton').linkbutton("disable");
+                        },
+                        complete: function () {
+                            $('#confirmButton').linkbutton("enable");
+                        },
+                        error: function (data) {
+                            $.messager.alert({
+                                title: "Tips",
+                                msg: data.responseText,
+                                icon: "error"
+                            });
+                        },
+                        success: function (rsp, status, xhr) {
+                            if (rsp.retCode === "0000") {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "info"
+                                });
+
+                                custClose();
+                                custBatchQuery();
+                            } else {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "error"
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        function custPay() {
+            var row = $('#dg').datagrid('getSelected');
+
+            $('#dlg-pay').dialog('open');
+            $('#dlg-pay').find('#custProtocolNo').val(row.treatyNo);
+            $('#dlg-pay').find('#custName').val(row.custName);
+            $('#dlg-pay').find('#custBankAccountNo').val(row.custBankAccountNo);
+            $('#dlg-pay').find('#custBankNo').combobox('setValue', row.custBankNo);
+            $('#dlg-pay').find('#custBankAccountIssuerNo').val(row.custBankAccountIssuerNo);
+            $('#dlg-pay').find('#custBankAcctType').combobox('setValue', row.custBankAcctType);
+            $('#dlg-pay').find('#custAccountCreditOrDebit').combobox('setValue', row.custAccountCreditOrDebit);
+            $('#dlg-pay').find('#custCardValidDate').val(row.custCardValidDate);
+            $('#dlg-pay').find('#custCardCvv2').val(row.custCardCvv2);
+            $('#dlg-pay').find('#custCertificationType').combobox('setValue', row.custCertificationType);
+            $('#dlg-pay').find('#custID').val(row.custID);
+            $('#dlg-pay').find('#custPhone').val(row.custPhone);
+            $('#dlg-pay').find('#custEmail').val(row.custEmail);
+        }
+
+        function payClose() {
+            $('#dlg-pay').dialog('close');
+        }
+
+        function payConfirm() {
+            var amount = $('#dlg-pay').find('#amount').val();
+
+            if (amount.length > 0) {
+                amount = Math.floor(parseFloat(amount) * 100).toString();
+            } else {
+                $.messager.alert({
+                    title: "Tips",
+                    msg: "金额无效",
+                    icon: "error"
+                });
+                return;
+            }
+
+            $.messager.confirm("Tips", "确定付款?", function (r) {
+                if (r) {
+                    $.ajax({
+                        url: "/gbp_pay",
+                        type: "POST",
+                        data: JSON.stringify({
+                            custProtocolNo: $('#dlg-pay').find('#custProtocolNo').val(),
+                            tradeName: $('#dlg-pay').find('#tradeName').val(),
+                            merchantBankAccountNo: $('#dlg-pay').find('#merchantBankAccountNo').val(),
+                            merchantBindPhoneNo: $('#dlg-pay').find('#merchantBindPhoneNo').val(),
+                            amount: amount,
+                            custBankNo: $('#dlg-pay').find('#custBankNo').val(),
+                            custBankAccountIssuerNo: $('#dlg-pay').find('#custBankAccountIssuerNo').val(),
+                            custBankAccountNo: $('#dlg-pay').find('#custBankAccountNo').val(),
+                            custName: $('#dlg-pay').find('#custName').val(),
+                            custBankAcctType: $('#dlg-pay').find('#custBankAcctType').val(),
+                            custAccountCreditOrDebit: $('#dlg-pay').find('#custAccountCreditOrDebit').val(),
+                            custCardValidDate: $('#dlg-pay').find('#custCardValidDate').val(),
+                            custCardCvv2: $('#dlg-pay').find('#custCardCvv2').val(),
+                            custCertificationType: $('#dlg-pay').find('#custCertificationType').val(),
+                            custID: $('#dlg-pay').find('#custID').val(),
+                            custPhone: $('#dlg-pay').find('#custPhone').val(),
+                            messages: $('#dlg-pay').find('#messages').val(),
+                            custEmail: $('#dlg-pay').find('#custEmail').val(),
+                            emailMessages: $('#dlg-pay').find('#emailMessages').val(),
+                            remark: $('#dlg-pay').find('#remark').val()
+                        }),
+                        dataType: "json",
+                        contentType: "application/json",
+                        beforeSend: function () {
+                            $('#payConfirmButton').linkbutton("disable");
+                        },
+                        complete: function () {
+                            $('#payConfirmButton').linkbutton("enable");
+                        },
+                        error: function (data) {
+                            $.messager.alert({
+                                title: "Tips",
+                                msg: data.responseText,
+                                icon: "error"
+                            });
+                        },
+                        success: function (rsp, status, xhr) {
+                            if (rsp.retCode === "0000") {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "info"
+                                });
+
+                                payClose();
+                            } else {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "error"
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#dg').datagrid('getPager').pagination({
+                beforePageText: '第',
+                afterPageText: '页    共 {pages} 页',
+                displayMsg: '当前显示 {from} - {to} 条记录   共 {total} 条记录'
+            });
+        });
+
+    </script>
+</head>
+<body style="padding-bottom:90px">
+<div id="right-menu" class="easyui-menu" style="width:auto;">
+    <!--<div onclick="custDelete()" data-options="iconCls:'icon-clear'">删除</div>-->
+    <div onclick="custModify()" data-options="iconCls:'icon-edit'">修改</div>
+    <div class="menu-sep"></div>
+    <div onclick="custPay()" data-options="iconCls:'icon-settle'">付款</div>
+    <div class="menu-sep"></div>
+    <div onclick="sendTreaty('gbp_send_treaty_record_to_kft')" data-options="iconCls:'icon-settle'">签署协议</div>
+    <div class="menu-sep"></div>
+    <div onclick="sendTreaty('gbp_query_treaty_record_info')" data-options="iconCls:'icon-settle'">查询协议状态</div>
+</div>
+<div id="tb">
+    <div style="height:10px"></div>
+    <div>
+        <span style="margin-left:10px;width:50px;"><font size="4">客户姓名: </font></span>
+        <input id="custName" class="easyui-textbox" type="text" style="width:140px;" name="custName" maxlength="4"/>
+        <span style="margin-left:10px;width:50px;"><font size="4">客户账户: </font></span>
+        <input id="custBankAccountNo" class="easyui-textbox" type="text" style="width:140px;" name="custBankAccountNo"
+               maxlength="4"/>
+    </div>
+    <div style="height:10px"></div>
+    <div>
+        <span style="margin-left:10px;width:50px;"><font size="4">证件号码: </font></span>
+        <input id="custID" class="easyui-textbox" type="text" style="width:140px;" name="custID" maxlength="4"/>
+        <span style="margin-left:10px;width:50px;"><font size="4">手机号码: </font></span>
+        <input id="custPhone" class="easyui-textbox" type="text" style="width:140px;" name="custPhone" maxlength="4"/>
+        <span style="margin-left:10px"></span>
+        <a id="custQuery" href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-search" plain="true"
+           onclick="custBatchQuery()"><font size="4">查询</font></a>
+        <span style="margin-left:10px"></span>
+        <a id="custAdd" href="javascript:void(0)" class="easyui-linkbutton" iconCls="icon-add" plain="true"><font
+                size="4" onclick="custAdd()">新增</font></a>
+    </div>
+    <div style="height:10px"></div>
+</div>
+
+<table id="dg" class="easyui-datagrid" style="width:auto;height:auto;margin-bottom:20px;"
+       data-options="
+            method:'get',
+            border:true,
+            rownumbers:true,
+            singleSelect:true,
+            pagination:true,
+            pageSize:30,
+            collapsible:true,
+            remoteSort:false,
+			onRowContextMenu: onContextMenu,
+            fit:true,
+            fitColumns:false,
+            multiSort:true,
+            striped:true
+        ">
+    <thead data-options="frozen:true">
+    <tr>
+        <!--<th data-options="field:'id',align:'center',sortable:true,editor:'textbox'" width=4%>客户编号</th>-->
+        <th data-options="field:'custName',align:'center',sortable:true,editor:'textbox'" width=10%>客户姓名</th>
+        <th data-options="field:'treatyStatus',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(treatyStatus, val)}"
+            width=5%>协议状态
+        </th>
+        <!--<th data-options="field:'treatyResultDesc',align:'center',sortable:true,editor:'textbox'" width=15%>协议开通描述</th>-->
+        <th data-options="field:'treatyNo',align:'center',sortable:true,editor:'textbox'" width=15%>协议号</th>
+    </tr>
+    </thead>
+    <thead>
+    <tr>
+        <th data-options="field:'custBankAccountNo',align:'center',sortable:true,editor:'textbox'" width=15%>客户银行账户号
+        </th>
+        <th data-options="field:'custBankNo',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(bankCode, val)}"
+            width=15%>客户银行账户行别
+        </th>
+        <th data-options="field:'custBankAccountIssuerNo',align:'center',sortable:true,editor:'textbox'" width=15%>
+            客户开户行网点号
+        </th>
+        <th data-options="field:'custBankAcctType',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(acctType, val)}"
+            width=10%>客户银行账户类型
+        </th>
+        <th data-options="field:'custAccountCreditOrDebit',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(cardType, val)}"
+            width=15%>客户账户借记贷记类型
+        </th>
+        <th data-options="field:'custCardValidDate',align:'center',sortable:true,editor:'textbox'" width=10%>客户信用卡有效期
+        </th>
+        <th data-options="field:'custCardCvv2',align:'center',sortable:true,editor:'textbox'" width=10%>客户信用卡的cvv2</th>
+        <th data-options="field:'custCertificationType',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(paperType, val)}"
+            width=10%>客户证件类型
+        </th>
+        <th data-options="field:'custID',align:'center',sortable:true,editor:'textbox'" width=15%>客户证件号码</th>
+        <th data-options="field:'custPhone',align:'center',sortable:true,editor:'textbox'" width=15%>客户手机号</th>
+        <th data-options="field:'custEmail',align:'center',sortable:true,editor:'textbox'" width=15%>客户邮箱地址</th>
+        <th data-options="field:'paymentItem',align:'center',sortable:true,formatter:function(val,row){return getComboboxText(paymentItemType, val)}"
+            width=15%>费项类别
+        </th>
+        <th data-options="field:'startDate',align:'center',sortable:true,editor:'textbox'" width=10%>协议开始日期</th>
+        <th data-options="field:'endDate',align:'center',sortable:true,editor:'textbox'" width=10%>协议结束</th>
+    </tr>
+    </thead>
+</table>
+
+<div id="dlg-cust" class="easyui-dialog" title="新增客户新增"
+     data-options="iconCls:'icon-save',modal:false,closed:true,minimizable:true,maximizable:true,maximized:false,resizable:true"
+     style="width:800px;height:400px;padding:10px">
+
+    <table align="center" style="width:90%;">
+        <tr>
+            <td align="right" style="width:30%"><font size="4">客户姓名: </font></td>
+            <td style="width:3%"></td>
+            <td style="width:65%"><input id="custName" class="easyui-validatebox textbox" type="text"
+                                         data-options="required:true" style="height:32px;width:80%" name="custName"
+                                         maxlength="50"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAccountNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="custBankAccountNo"
+                       maxlength="32"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户行别: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankNo" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:true,valueField:'value',textField:'text',data:bankCode"
+                       style="height:32px;width:80%" name="custBankNo" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户开户行网点号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAccountIssuerNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custBankAccountIssuerNo"
+                       maxlength="14"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAcctType" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:acctType"
+                       style="height:32px;width:80%" name="custBankAcctType" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户账户借记贷记类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custAccountCreditOrDebit" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:cardType"
+                       style="height:32px;width:80%" name="custAccountCreditOrDebit" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户信用卡有效期: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCardValidDate" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custCardValidDate"
+                       maxlength="4"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户信用卡的cvv2: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCardCvv2" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custCardCvv2" maxlength="3"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户证件类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCertificationType" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:paperType"
+                       style="height:32px;width:80%" name="custCertificationType" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户证件号码: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custID" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custID" maxlength="32"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户手机号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custPhone" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custPhone" maxlength="30"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户邮箱地址: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custEmail" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custEmail" maxlength="30"/>
+            </td>
+        </tr>
+        <tr>
+            <td align="right"><font size="4">费项类别（签署协议必填）: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="paymentItem" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:paymentItemType"
+                       style="height:32px;width:80%" name="paymentItem" maxlength="20"/></td>
+            </td>
+        </tr>
+        <tr>
+            <td align="right"><font size="4">协议生效时间（签署协议必填）: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="startDate" class="easyui-datebox"
+                       data-options="required:false,formatter:myformatter,parser:myparser" style="height:32px;width:80%"
+                       name="startDate"/>
+            </td>
+        </tr>
+        <tr>
+            <td align="right"><font size="4">协议失效时间（签署协议必填）: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="endDate" class="easyui-datebox"
+                       data-options="required:false,formatter:myformatter,parser:myparser" style="height:32px;width:80%"
+                       name="endDate"/>
+            </td>
+        </tr>
+        <tr>
+            <td align="center"><br/><br/><a id="cancelButton" href="javascript:void(0)" class="easyui-linkbutton"
+                                            iconCls="icon-cancel" style="width:100px;height:32px;"
+                                            onclick="custClose();">取消</a></td>
+            </font></td>
+            <td style="width:3%"></td>
+            <td align="center"><br/><br/><a id="confirmButton" href="javascript:void(0)" class="easyui-linkbutton"
+                                            iconCls="icon-add" style="width:100px;height:32px;">新增</a></td>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id="dlg-pay" class="easyui-dialog" title="单笔付款"
+     data-options="iconCls:'icon-save',modal:false,closed:true,minimizable:true,maximizable:true,maximized:false,resizable:true"
+     style="width:700px;height:400px;padding:10px">
+
+    <table align="center" style="width:90%;">
+        <tr>
+            <td align="right" style="width:45%"><font size="4">协议号: </font></td>
+            <td style="width:3%"></td>
+            <td style="width:52%"><input id="custProtocolNo" class="easyui-validatebox textbox" type="text"
+                                         data-options="required:true" style="height:32px;width:80%"
+                                         name="custProtocolNo"
+                                         maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right" style="width:45%"><font size="4">交易名称: </font></td>
+            <td style="width:3%"></td>
+            <td style="width:52%"><input id="tradeName" class="easyui-validatebox textbox" type="text"
+                                         data-options="required:true" style="height:32px;width:80%" name="tradeName"
+                                         maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">商户银行账号(T0必填): </font></td>
+            <td style="width:3%"></td>
+            <td><input id="merchantBankAccountNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="merchantBankAccountNo"
+                       maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">商户开户时绑定的手机号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="merchantBindPhoneNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="merchantBindPhoneNo"
+                       maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">交易金额: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="amount" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="amount" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户姓名: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custName" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="custName" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAccountNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="custBankAccountNo"
+                       maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户行别: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankNo" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:true,valueField:'value',textField:'text',data:bankCode"
+                       style="height:32px;width:300px" name="custBankNo" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户开户行网点号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAccountIssuerNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custBankAccountIssuerNo"
+                       maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户银行账户类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custBankAcctType" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:acctType"
+                       style="height:32px;width:100px" name="custBankAcctType" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户账户借记贷记类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custAccountCreditOrDebit" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:cardType"
+                       style="height:32px;width:100px" name="custAccountCreditOrDebit" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户信用卡有效期: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCardValidDate" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custCardValidDate"
+                       maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户信用卡的cvv2: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCardCvv2" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custCardCvv2" maxlength="20"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户证件类型: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custCertificationType" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:false,valueField:'value',textField:'text',data:paperType"
+                       style="height:32px;width:150px" name="custCertificationType" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户证件号码: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custID" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custID" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户手机号: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custPhone" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custPhone" maxlength="20"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">发送客户短信内容: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="messages" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="messages" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">客户邮箱地址: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="custEmail" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="custEmail" maxlength="20"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">发送客户邮件内容: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="emailMessages" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="emailMessages" maxlength="20"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">备注: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="remark" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="remark" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="center"><br/><br/><a id="payCancelButton" href="javascript:void(0)" class="easyui-linkbutton"
+                                            iconCls="icon-cancel" style="width:100px;height:32px;"
+                                            onclick="payClose();">取消</a></td>
+            </font></td>
+            <td style="width:3%"></td>
+            <td align="center"><br/><br/><a id="payConfirmButton" href="javascript:void(0)" class="easyui-linkbutton"
+                                            iconCls="icon-ok" style="width:100px;height:32px;" onclick="payConfirm();">付款</a>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>

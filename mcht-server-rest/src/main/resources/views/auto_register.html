@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_xsrf" content="{{.Xsrf_token}}"/>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/utils.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/gray/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/demo/demo.css">
+    <script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/src/jquery.tabs.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/extend/datagrid-detailview.js"></script>
+
+    <script>
+        "use strict";
+
+        function registerCancel() {
+            $('#dlg-register').find('#accountNo').textbox('setValue', "");
+            $('#dlg-register').find('#accountName').val("");
+            $('#dlg-register').find('#bankType').combobox('setValue', "");
+            $('#dlg-register').find('#amount').val("");
+            $('#dlg-register').find('#kftAccountNo').val("");
+            $('#dlg-register').find('#remark').val("");
+            $('#dlg-register').find('#accountNo').textbox('textbox').focus();
+        }
+
+        function registerConfirm() {
+            var amount = $('#dlg-register').find('#amount').val();
+
+            if (amount.length > 0) {
+                amount = Math.floor(parseFloat(amount) * 100).toString();
+            } else {
+                $.messager.alert({
+                    title: "Tips",
+                    msg: "金额无效",
+                    icon: "error"
+                });
+            }
+
+            $.messager.confirm("Tips", "确定补登?", function (r) {
+                if (r) {
+                    $.ajax({
+                        url: "/auto_register",
+                        type: "POST",
+                        data: JSON.stringify({
+                            accountNo: $('#dlg-register').find('#accountNo').val(),
+                            accountName: $('#dlg-register').find('#accountName').val(),
+                            bankType: $('#dlg-register').find('#bankType').val(),
+                            amount: amount,
+                            kftAccountNo: $('#dlg-register').find('#kftAccountNo').val(),
+                            remark: $('#dlg-register').find('#remark').val()
+                        }),
+                        dataType: "json",
+                        beforeSend: function () {
+                            $('#registerConfirmButton').linkbutton("disable");
+                        },
+                        complete: function () {
+                            $('#registerConfirmButton').linkbutton("enable");
+                        },
+                        error: function (data) {
+                            $.messager.alert({
+                                title: "Tips",
+                                msg: data.responseText,
+                                icon: "error"
+                            });
+                        },
+                        success: function (rsp, status, xhr) {
+                            if (rsp.retCode === "0000") {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: "补登成功",
+                                    icon: "info"
+                                });
+
+                                payCancel();
+                            } else {
+                                $.messager.alert({
+                                    title: "Tips",
+                                    msg: rsp.retDesc,
+                                    icon: "error"
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            $('#dlg-register').dialog("open");
+        });
+    </script>
+</head>
+<body>
+<div id="dlg-register" class="easyui-dialog" title="自动补登"
+     data-options="iconCls:'icon-settle',modal:true,closable:false,minimizable:false,maximizable:false,maximized:false,resizable:false"
+     style="width:800px;height:400px;padding:10px">
+
+    <table align="center" style="width:90%;">
+        <tr>
+            <td align="right" style="width:35%"><font size="4">商户打款银行账户号: </font></td>
+            <td style="width:3%"></td>
+            <td style="width:52%"><input id="accountNo" class="easyui-validatebox easyui-textbox" type="text"
+                                         data-options="required:true" style="height:32px;width:80%" name="accountNo"
+                                         maxlength="32"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">银行账户名称: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="accountName" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="accountName" maxlength="64"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">发卡银行: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="bankType" class="easyui-validatebox easyui-combobox" type="text"
+                       data-options="required:true,valueField:'value',textField:'text',data:bankCode"
+                       style="height:32px;width:300px" name="bankType" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">打款金额: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="amount" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="amount" maxlength="15"/></td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">快付通收款账户: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="kftAccountNo" class="easyui-validatebox textbox" type="text"
+                       data-options="required:true" style="height:32px;width:80%" name="kftAccountNo" maxlength="20"/>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="right"><font size="4">打款时填的备注信息: </font></td>
+            <td style="width:3%"></td>
+            <td><input id="remark" class="easyui-validatebox textbox" type="text"
+                       data-options="required:false" style="height:32px;width:80%" name="remark" maxlength="20"/></td>
+        </tr>
+
+        <tr>
+            <td align="center"><br/><br/><a id="registerCancelButton" href="javascript:void(0)"
+                                            class="easyui-linkbutton" iconCls="icon-cancel"
+                                            style="width:100px;height:32px;" onclick="registerCancel();">重置</a></td>
+            </font></td>
+            <td style="width:3%"></td>
+            <td align="center"><br/><br/><a id="registerConfirmButton" href="javascript:void(0)"
+                                            class="easyui-linkbutton" iconCls="icon-settle"
+                                            style="width:100px;height:32px;" onclick="registerConfirm();">补登</a></td>
+        </tr>
+    </table>
+</div>
+</body>

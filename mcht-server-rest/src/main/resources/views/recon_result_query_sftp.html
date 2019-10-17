@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="_xsrf" content="{{.Xsrf_token}}"/>
+
+    <link rel="stylesheet" type="text/css" href="/static/css/utils.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/gray/easyui.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="/plugins/easyui/demo/demo.css">
+    <script type="text/javascript" src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/utils.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/plugins/easyui/src/jquery.tabs.js"></script>
+
+    <script>
+        "use strict";
+
+        function sftpDownload() {
+            $.ajax({
+                url: "/recon_result_query_sftp/" + new Date($('#tradeDate').datebox("getValue")).format("yyyyMMdd"),
+                type: "GET",
+                beforeSend: function () {
+                    $('#download').linkbutton("disable");
+                },
+                complete: function () {
+                    $('#download').linkbutton("enable");
+                },
+                error: function (data) {
+                    $.messager.alert({
+                        title: "Tips",
+                        msg: data.responseText,
+                        icon: "error"
+                    });
+                },
+                success: function (rsp, status, xhr) {
+                    if (rsp.retCode != "0000") {
+                        $.messager.alert({
+                            title: "Tips",
+                            msg: rsp.retDesc,
+                            icon: "error"
+                        });
+                    } else {
+                        window.location.href = rsp.url;
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function () {
+            var today = new Date();
+            var yesterday = new Date(today.getTime() - 1000 * 60 * 60 * 24);
+
+            var tradeDate = (yesterday.getMonth() + 1) + '/' + yesterday.getDate() + '/' + yesterday.getFullYear();
+
+            $('#tradeDate').datebox("setValue", tradeDate);
+        });
+
+    </script>
+</head>
+<body>
+<div style="width:500px;height:400px;margin:0 auto;">
+    <div class="easyui-panel" title="对账文件下载" style="width:100%;height:100%;">
+        <div style="padding:10px 10px 10px 10px">
+            <div style="margin-top:50px;width:100%;height:20px;text-align:center">
+                <span><font size="4">账务日期: </font></span>
+                <input id="tradeDate" name="tradeDate" class="easyui-datebox" style="width:110px"/>
+            </div>
+
+            <div style="margin-top:50px;width:100%;height:20px;text-align:center">
+                <a id="download" class="easyui-linkbutton" iconCls="icon-download" style="width:40%;text-align:center"
+                   onclick="return sftpDownload();">下载</a>
+            </div>
+
+            <!--<div style="margin-top:50px;width:100%;height:20px;">-->
+            <!--<div id="progressbar" class="easyui-progressbar" style="width:100%;" data-options="height:15"></div>-->
+            <!--</div>-->
+        </div>
+    </div>
+</div>
+</body>
